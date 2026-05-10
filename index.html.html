@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MUCH Phenotype Predictor — Ethiopia LMIC Tool</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #f4f6f9; color: #1a1a2e; min-height: 100vh; }
+  .header { background: #1A2D5A; color: #fff; padding: 20px 28px; }
+  .header h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+  .header p { font-size: 13px; color: #9FB5D8; margin-top: 4px; }
+  .container { max-width: 860px; margin: 0 auto; padding: 24px 16px 48px; }
+  .card { background: #fff; border-radius: 12px; border: 0.5px solid #dde3ec; padding: 20px 24px; margin-bottom: 16px; }
+  .card-title { font-size: 13px; font-weight: 600; color: #1A2D5A; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title svg { width: 16px; height: 16px; stroke: #185FA5; fill: none; stroke-width: 2; stroke-linecap: round; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px; }
+  .field .hint { font-size: 11px; color: #6B7280; margin-top: 3px; }
+  .sbp-row { display: flex; align-items: center; gap: 12px; }
+  input[type=range] { flex: 1; accent-color: #185FA5; cursor: pointer; }
+  .sbp-val { font-size: 18px; font-weight: 600; color: #185FA5; min-width: 70px; }
+  .radio-group { display: flex; gap: 10px; flex-wrap: wrap; }
+  .radio-btn { display: flex; align-items: center; gap: 6px; background: #f4f6f9; border: 1.5px solid #dde3ec; border-radius: 8px; padding: 8px 14px; cursor: pointer; font-size: 13px; font-weight: 500; color: #374151; transition: all .15s; user-select: none; }
+  .radio-btn input { display: none; }
+  .radio-btn.selected { border-color: #185FA5; background: #E6F1FB; color: #0C447C; }
+  .btn-calc { width: 100%; background: #1A2D5A; color: #fff; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; letter-spacing: .02em; transition: background .15s; margin-top: 4px; }
+  .btn-calc:hover { background: #185FA5; }
+  .btn-reset { width: 100%; background: transparent; color: #6B7280; border: 0.5px solid #dde3ec; border-radius: 10px; padding: 10px; font-size: 13px; cursor: pointer; margin-top: 8px; transition: all .15s; }
+  .btn-reset:hover { background: #f4f6f9; }
+  .result-box { display: none; border-radius: 12px; border: 2px solid #dde3ec; padding: 22px 24px; margin-top: 20px; }
+  .result-box.high { border-color: #E24B4A; background: #FEF2F2; }
+  .result-box.moderate { border-color: #EF9F27; background: #FFFBEB; }
+  .result-box.low { border-color: #1D9E75; background: #E1F5EE; }
+  .result-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 4px; }
+  .result-box.high .result-label { color: #A32D2D; }
+  .result-box.moderate .result-label { color: #854F0B; }
+  .result-box.low .result-label { color: #085041; }
+  .result-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .result-box.high .result-title { color: #A32D2D; }
+  .result-box.moderate .result-title { color: #854F0B; }
+  .result-box.low .result-title { color: #085041; }
+  .result-prob { font-size: 13px; color: #374151; margin-bottom: 14px; line-height: 1.5; }
+  .prob-bar-track { background: #e5e7eb; border-radius: 6px; height: 10px; margin: 10px 0 6px; overflow: hidden; }
+  .prob-bar-fill { height: 100%; border-radius: 6px; transition: width .5s ease; }
+  .result-box.high .prob-bar-fill { background: #E24B4A; }
+  .result-box.moderate .prob-bar-fill { background: #EF9F27; }
+  .result-box.low .prob-bar-fill { background: #1D9E75; }
+  .result-rec { font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-top: 12px; line-height: 1.6; }
+  .result-box.high .result-rec { background: rgba(226,75,74,.1); color: #791F1F; }
+  .result-box.moderate .result-rec { background: rgba(239,159,39,.12); color: #633806; }
+  .result-box.low .result-rec { background: rgba(29,158,117,.1); color: #085041; }
+  .breakdown { margin-top: 18px; border-top: 0.5px solid #dde3ec; padding-top: 14px; }
+  .breakdown-title { font-size: 12px; font-weight: 600; color: #6B7280; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; }
+  .factor-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 0.5px solid #f3f4f6; font-size: 12px; }
+  .factor-row:last-child { border-bottom: none; }
+  .factor-name { color: #374151; }
+  .factor-contrib { font-weight: 600; font-family: monospace; }
+  .score-chip { display: inline-block; background: #1A2D5A; color: #fff; border-radius: 6px; padding: 3px 10px; font-size: 12px; font-weight: 600; margin-left: 8px; }
+  .formula-card { background: #F8FAFC; border: 0.5px solid #dde3ec; border-radius: 10px; padding: 14px 18px; margin-top: 14px; font-size: 12px; color: #374151; line-height: 1.8; }
+  .formula-card code { background: #e5e7eb; border-radius: 4px; padding: 1px 5px; font-family: monospace; font-size: 11px; }
+  .cutoff-note { font-size: 11px; color: #6B7280; margin-top: 8px; }
+  .simplified-score { background: #1A2D5A; color: #fff; border-radius: 10px; padding: 16px 20px; margin-top: 14px; }
+  .simplified-score h4 { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #9FB5D8; text-transform: uppercase; letter-spacing: .05em; }
+  .score-items { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .score-item { background: rgba(255,255,255,.08); border-radius: 7px; padding: 8px 12px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+  .score-item-pts { font-weight: 700; font-size: 15px; color: #9FE1CB; }
+  .total-score-row { display: flex; justify-content: space-between; align-items: center; border-top: 0.5px solid rgba(255,255,255,.15); padding-top: 12px; margin-top: 8px; }
+  .total-score-label { font-size: 14px; font-weight: 600; }
+  .total-score-val { font-size: 26px; font-weight: 700; color: #9FE1CB; }
+  .risk-key { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .risk-key-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #D3D1C7; }
+  .risk-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .disclaimer { font-size: 11px; color: #9B97A0; background: #f4f6f9; border-radius: 8px; padding: 10px 14px; margin-top: 20px; line-height: 1.6; border-left: 3px solid #dde3ec; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>MUCH Phenotype Predictor</h1>
+  <p>Masked Uncontrolled Hypertension vs. Sustained Controlled Hypertension &mdash; Ethiopia / LMIC Clinical Decision Tool</p>
+</div>
+<div class="container">
+
+  <div class="card">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+      Patient information
+    </div>
+
+    <div class="field">
+      <label>Office systolic blood pressure (mmHg)</label>
+      <div class="sbp-row">
+        <input type="range" id="sbp" min="90" max="140" value="115" step="1" oninput="document.getElementById('sbpVal').textContent=this.value">
+        <span class="sbp-val" id="sbpVal">115</span>
+        <span style="font-size:12px;color:#6B7280;">mmHg</span>
+      </div>
+      <div class="hint">Slide to enter the most recent office SBP. Eligible range: controlled office BP &le;140 mmHg (ISH 2020).</div>
+    </div>
+
+    <div class="field">
+      <label>Diabetes mellitus</label>
+      <div class="radio-group" id="dm-group">
+        <label class="radio-btn selected" onclick="selectRadio('dm','no',this)"><input type="radio" name="dm" value="no" checked>No diabetes</label>
+        <label class="radio-btn" onclick="selectRadio('dm','yes',this)"><input type="radio" name="dm" value="yes">Diabetes present</label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>ACE inhibitor use</label>
+      <div class="radio-group" id="acei-group">
+        <label class="radio-btn selected" onclick="selectRadio('acei','no',this)"><input type="radio" name="acei" value="no" checked>Not taking ACEI</label>
+        <label class="radio-btn" onclick="selectRadio('acei','yes',this)"><input type="radio" name="acei" value="yes">Taking ACEI</label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Calcium channel blocker (CCB) use</label>
+      <div class="radio-group" id="ccb-group">
+        <label class="radio-btn selected" onclick="selectRadio('ccb','no',this)"><input type="radio" name="ccb" value="no" checked>Not taking CCB</label>
+        <label class="radio-btn" onclick="selectRadio('ccb','yes',this)"><input type="radio" name="ccb" value="yes">Taking CCB</label>
+      </div>
+    </div>
+
+    <button class="btn-calc" onclick="calculate()">Calculate MUCH probability</button>
+    <button class="btn-reset" onclick="resetForm()">Reset form</button>
+  </div>
+
+  <div id="result" class="result-box">
+    <div class="result-label" id="res-label">Risk level</div>
+    <div class="result-title" id="res-title">—</div>
+    <div class="result-prob" id="res-prob"></div>
+    <div class="prob-bar-track"><div class="prob-bar-fill" id="prob-bar" style="width:0%"></div></div>
+    <div id="res-rec" class="result-rec"></div>
+
+    <div class="breakdown">
+      <div class="breakdown-title">Logistic regression details</div>
+      <div class="factor-row"><span class="factor-name">Office SBP contribution (B &times; SBP)</span><span class="factor-contrib" id="fc-sbp">—</span></div>
+      <div class="factor-row"><span class="factor-name">Diabetes status (B = 0.996)</span><span class="factor-contrib" id="fc-dm">—</span></div>
+      <div class="factor-row"><span class="factor-name">ACEI use (B = &minus;0.600)</span><span class="factor-contrib" id="fc-acei">—</span></div>
+      <div class="factor-row"><span class="factor-name">CCB use (B = &minus;0.197)</span><span class="factor-contrib" id="fc-ccb">—</span></div>
+      <div class="factor-row"><span class="factor-name">Constant (&alpha; = &minus;7.646)</span><span class="factor-contrib">&minus;7.646</span></div>
+      <div class="factor-row" style="font-weight:600"><span class="factor-name">Log-odds (linear predictor)</span><span class="factor-contrib" id="fc-total">—</span></div>
+    </div>
+
+    <div class="formula-card">
+      <strong>Model equation (Pooled post-imputation, Model 2):</strong><br>
+      log-odds = &minus;7.646 + 0.066&times;SBP + 0.996&times;DM &minus; 0.600&times;ACEI &minus; 0.197&times;CCB<br>
+      P(MUCH) = 1 / (1 + e<sup>&minus;log-odds</sup>)<br>
+      <span class="cutoff-note">Classification threshold: P &ge; 0.50 &rarr; MUCH. Overall accuracy 65.9%; MUCH sensitivity 90.7%; Nagelkerke R&sup2; = 0.129.</span>
+    </div>
+  </div>
+
+  <div id="simple-score" style="display:none;">
+    <div class="simplified-score">
+      <h4>Simplified clinical MUCH score (integer-based)</h4>
+      <div class="score-items">
+        <div class="score-item"><span>SBP &ge;130 mmHg</span><span class="score-item-pts" id="sc-sbp">—</span></div>
+        <div class="score-item"><span>SBP 120&ndash;129 mmHg</span><span class="score-item-pts">+1</span></div>
+        <div class="score-item"><span>Diabetes present</span><span class="score-item-pts">+3</span></div>
+        <div class="score-item"><span>ACEI use</span><span class="score-item-pts">&minus;2</span></div>
+        <div class="score-item"><span>CCB use</span><span class="score-item-pts">&minus;1</span></div>
+      </div>
+      <div class="total-score-row">
+        <span class="total-score-label">Patient score</span>
+        <span class="total-score-val" id="simple-total">—</span>
+      </div>
+      <div class="risk-key">
+        <div class="risk-key-item"><div class="risk-dot" style="background:#1D9E75"></div> Score &le;1: Low risk</div>
+        <div class="risk-key-item"><div class="risk-dot" style="background:#EF9F27"></div> Score 2&ndash;3: Moderate risk</div>
+        <div class="risk-key-item"><div class="risk-dot" style="background:#E24B4A"></div> Score &ge;4: High risk &rarr; refer for ABPM</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    <strong>Clinical disclaimer:</strong> This tool is intended for research and clinical decision support in resource-limited settings. It is based on a binary logistic regression model derived from a cross-sectional Ethiopian cohort (n=244; MUCH n=75, SCH n=54) using ISH 2020 thresholds. Results should be interpreted by a qualified clinician alongside the full clinical picture. External validation in independent LMIC cohorts is recommended before implementation as a standalone triage tool. Not a substitute for ambulatory blood pressure monitoring (ABPM).
+  </div>
+</div>
+
+<script>
+var radioState = { dm: 'no', acei: 'no', ccb: 'no' };
+
+function selectRadio(name, val, el) {
+  radioState[name] = val;
+  var group = document.getElementById(name + '-group');
+  group.querySelectorAll('.radio-btn').forEach(function(b) { b.classList.remove('selected'); });
+  el.classList.add('selected');
+}
+
+function calculate() {
+  var sbp = parseInt(document.getElementById('sbp').value);
+  var dm = radioState.dm === 'yes' ? 1 : 0;
+  var acei = radioState.acei === 'yes' ? 1 : 0;
+  var ccb = radioState.ccb === 'yes' ? 1 : 0;
+
+  var logOdds = -7.646 + 0.066*sbp + 0.996*dm - 0.600*acei - 0.197*ccb;
+  var prob = 1 / (1 + Math.exp(-logOdds));
+  var probPct = (prob * 100).toFixed(1);
+
+  document.getElementById('fc-sbp').textContent = (0.066 * sbp).toFixed(3);
+  document.getElementById('fc-dm').textContent = dm ? '+0.996' : '0.000';
+  document.getElementById('fc-acei').textContent = acei ? '-0.600' : '0.000';
+  document.getElementById('fc-ccb').textContent = ccb ? '-0.197' : '0.000';
+  document.getElementById('fc-total').textContent = logOdds.toFixed(3);
+
+  var res = document.getElementById('result');
+  res.className = 'result-box';
+  var title, label, rec;
+
+  if (prob >= 0.65) {
+    res.classList.add('high');
+    label = 'High probability of MUCH';
+    title = 'MUCH likely — refer for ABPM';
+    rec = 'This patient has a high probability (' + probPct + '%) of masked uncontrolled hypertension. Ambulatory blood pressure monitoring (ABPM) or home blood pressure monitoring (HBPM) is strongly recommended. Consider antihypertensive regimen review regardless of apparent office BP control.';
+  } else if (prob >= 0.50) {
+    res.classList.add('moderate');
+    label = 'Moderate-high probability of MUCH';
+    title = 'Possible MUCH — consider ABPM';
+    rec = 'Estimated MUCH probability is ' + probPct + '%. ABPM or HBPM is advisable to confirm true blood pressure status. Pay particular attention to diabetes management and medication adherence.';
+  } else if (prob >= 0.35) {
+    res.classList.add('moderate');
+    label = 'Borderline probability';
+    title = 'Low-moderate risk — monitor closely';
+    rec = 'Estimated MUCH probability is ' + probPct + '%. While below the 50% decision threshold, this patient warrants careful follow-up. Reassess in 3 months or if risk factors change.';
+  } else {
+    res.classList.add('low');
+    label = 'Low probability of MUCH';
+    title = 'SCH phenotype more likely';
+    rec = 'Estimated MUCH probability is ' + probPct + '%. Sustained controlled hypertension is the more likely phenotype. Routine follow-up is appropriate. Reassess if office BP rises or new risk factors emerge.';
+  }
+
+  document.getElementById('res-label').textContent = label;
+  document.getElementById('res-title').textContent = title;
+  document.getElementById('res-prob').textContent = 'Predicted probability of MUCH: ' + probPct + '% (model threshold: 50%)';
+  document.getElementById('prob-bar').style.width = Math.min(probPct, 100) + '%';
+  document.getElementById('res-rec').textContent = rec;
+  res.style.display = 'block';
+
+  var sbpPts = sbp >= 130 ? 2 : (sbp >= 120 ? 1 : 0);
+  var dmPts = dm * 3;
+  var aceiPts = acei * -2;
+  var ccbPts = ccb * -1;
+  var total = sbpPts + dmPts + aceiPts + ccbPts;
+
+  document.getElementById('sc-sbp').textContent = sbp >= 130 ? '+2' : (sbp >= 120 ? '+1' : '0');
+  document.getElementById('simple-total').textContent = (total >= 0 ? '+' : '') + total;
+  document.getElementById('simple-score').style.display = 'block';
+
+  res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function resetForm() {
+  document.getElementById('sbp').value = 115;
+  document.getElementById('sbpVal').textContent = '115';
+  radioState = { dm: 'no', acei: 'no', ccb: 'no' };
+  ['dm','acei','ccb'].forEach(function(n) {
+    var group = document.getElementById(n + '-group');
+    var btns = group.querySelectorAll('.radio-btn');
+    btns.forEach(function(b) { b.classList.remove('selected'); });
+    btns[0].classList.add('selected');
+  });
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('simple-score').style.display = 'none';
+}
+</script>
+</body>
+</html>
